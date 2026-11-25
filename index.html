@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>劇場的藝術：從傳統舞台到沉浸式劇場</title>
+<style>
+  :root {
+    --bg-color: #0b0c10;
+    --slide-bg: #1f2833;
+    --text-color: #c5c6c7;
+    --accent-color: #66fcf1;
+    --accent-dim: #45a29e;
+    --font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans TC", sans-serif;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: var(--font-family);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+
+  .presentation-container {
+    width: 100vw;
+    height: 100vh;
+    max-width: 177.78vh; /* 16:9 aspect ratio max */
+    max-height: 56.25vw;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    background-color: var(--slide-bg);
+    border: 1px solid var(--accent-dim);
+  }
+
+  /* 進度條 */
+  .progress-bar-container {
+    width: 100%;
+    height: 6px;
+    background-color: #0b0c10;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 10;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background-color: var(--accent-color);
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+
+  /* 投影片主體 */
+  .slides-wrapper {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 6vh 8vw;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease-in-out;
+  }
+
+  .slide.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* 投影片內容 */
+  .slide-header {
+    border-bottom: 2px solid var(--accent-dim);
+    padding-bottom: 2vh;
+    margin-bottom: 3vh;
+  }
+
+  .slide-title {
+    font-size: clamp(1.5rem, 2.5vw, 2.5rem);
+    color: #ffffff;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+
+  .slide-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
+  .key-points-list {
+    list-style-type: none;
+    display: flex;
+    flex-direction: column;
+    gap: 2vh;
+  }
+
+  .key-points-list li {
+    font-size: clamp(1rem, 1.6vw, 1.35rem);
+    line-height: 1.6;
+    position: relative;
+    padding-left: 1.5em;
+  }
+
+  .key-points-list li::before {
+    content: "▪";
+    color: var(--accent-color);
+    position: absolute;
+    left: 0;
+    font-size: 1.2em;
+  }
+
+  /* 講者筆記區 */
+  .speaker-notes-box {
+    background-color: rgba(11, 12, 16, 0.6);
+    border-left: 4px solid var(--accent-color);
+    padding: 1.5vh 2vw;
+    font-size: clamp(0.85rem, 1.2vw, 1.05rem);
+    color: #a5a9b4;
+    margin-top: 2vh;
+    border-radius: 0 4px 4px 0;
+  }
+
+  .speaker-notes-box span {
+    color: var(--accent-color);
+    font-weight: bold;
+  }
+
+  /* 底部資料來源與控制列 */
+  .slide-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-top: 1px solid rgba(69, 162, 158, 0.3);
+    padding-top: 1.5vh;
+    margin-top: 2vh;
+    font-size: clamp(0.7rem, 1vw, 0.9rem);
+    color: #8892b0;
+  }
+
+  .meta-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3vh;
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 1.5vw;
+  }
+
+  button.nav-btn {
+    background-color: transparent;
+    border: 1px solid var(--accent-dim);
+    color: var(--accent-color);
+    padding: 0.5vh 1.2vw;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: clamp(0.8rem, 1.1vw, 1rem);
+    transition: all 0.2s;
+  }
+
+  button.nav-btn:hover:not(:disabled) {
+    background-color: var(--accent-dim);
+    color: #ffffff;
+  }
+
+  button.nav-btn:disabled {
+    border-color: #2c353d;
+    color: #4e5d6c;
+    cursor: not-allowed;
+  }
+
+  .page-indicator {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* RWD 手機直向適應 */
+  @media (max-width: 768px) {
+    .presentation-container {
+      height: 100vh;
+      max-height: 100vh;
+      border: none;
+    }
+    .slide {
+      padding: 5vh 6vw;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="presentation-container">
+  <!-- 進度條 -->
+  <div class="progress-bar-container">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <!-- 投影片外框 -->
+  <div class="slides-wrapper" id="slidesWrapper">
+
+    <!-- Slide 1 -->
+    <div class="slide active">
+      <div class="slide-header">
+        <h2 class="slide-title">課程導言：探索劇場的多元面貌</h2>
+      </div>
+      <div class="slide-body">
+        <ul class="key-points-list">
+          <li>劇場不僅是劇院內的演出，更跨越了傳統廟會、社區及現代多元空間 [DOC-002]。</li>
+          <li>台灣劇場發展融合了豐富的傳統戲曲、現代劇場演變，以及廣播與教育劇場等多元應用 [DOC-001, DOC-005]。</li>
+        </ul>
+        <div class="speaker-notes-box">
+          <span>講者筆記：</span>歡迎各位初學者！本堂課將帶領大家從歷史與形式的脈絡出發，認識劇場藝術從傳統到現代的轉變。
+        </div>
+      </div>
+      <div class="slide-footer">
+        <div class="meta-info">
+          <div>來源代碼: DOC-001, DOC-002</div>
+          <div>相關檔案: wiki/index.md, wiki/syntheses/theatre-history-perspective.md</div>
+        </div>
+        <div class="controls">
+          <button class="nav-btn" id="prevBtn" onclick="changeSlide(-1)">上一頁</button>
+          <span class="page-indicator" id="pageIndicator">1 / 8</span>
+          <button class="nav-btn" id="nextBtn" onclick="changeSlide(1)">下一頁</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 2 -->
+    <div class="slide">
+      <div class="slide-header">
+        <h2 class="slide-title">傳統藝術與戲曲：台灣戲曲的根基</h2>
+      </div>
+      <div class="slide-body">
+        <ul class="key-points-list">
+          <li>台灣傳統戲曲融合了原住民族、漢族及各時期外來文化養分 [DOC-001]。</li>
+          <li>包含南管戲（梨園戲）、北管戲（亂彈戲）、高甲戲、四平戲、客家戲等多元劇種 [DOC-001]。</li>
+          <li>土生土長的歌仔戲與偶戲（布袋戲、皮影戲、傀儡戲等）在野台、戲院、電影與電視中大行其道 [DOC-001, DOC-002]。</li>
+        </ul>
+        <div class="speaker-notes-box">
+          <span>講者筆記：</span>傳統戲曲是台灣表演藝術的根基，不同的劇種帶有各自的歷史脈絡與音樂特色。
+        </div>
+      </div>
+      <div class="slide-footer">
+        <div class="meta-info">
+          <div>來源代碼: DOC-001, DOC-002</div>
+          <div>相關檔案: wiki/concepts/traditional-arts.md</div>
+        </div>
+        <div class="controls">
+          <button class="nav-btn" onclick="changeSlide(-1)">上一頁</button>
+          <span class="page-indicator">2 / 8</span>
+          <button class="nav-btn" onclick="changeSlide(1)">下一頁</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 3 -->
+    <div class="slide">
+      <div class="slide-header">
+        <h2 class="slide-title">傳統劇場的民間性與五大儀式結構</h2>
+      </div>
+      <div class="slide-body">
+        <ul class="key-points-list">
+          <li>在西方現代劇場建立前，劇場主流在民間，戲劇本身即是一套儀式系統 [DOC-002]。</li>
+          <li>傳統劇場具備五大儀式結構：儀式系統（多焦點演出）、空間與時間規範、表演者與祭司科儀互通、觀眾兼具信徒角色、表演體系兼具宗教與劇場美學 [DOC-002]。</li>
+          <li>透過民間文化運作與滋生系統，提供生活規範與集體參與 [DOC-002]。</li>
+        </ul>
+        <div class="speaker-notes-box">
+          <span>講者筆記：</span>傳統劇場不只是表演，更緊密結合宗教儀式與民間信仰，讓觀眾同時具備信徒的身分。
+        </div>
+      </div>
+      <div class="slide-footer">
+        <div class="meta-info">
+          <div>來源代碼: DOC-002</div>
+          <div>相關檔案: wiki/syntheses/theatre-history-perspective.md, wiki/concepts/traditional-arts.md</div>
+        </div>
+        <div class="controls">
+          <button class="nav-btn" onclick="changeSlide(-1)">上一頁</button>
+          <span class="page-indicator">3 / 8</span>
+          <button class="nav-btn" onclick="changeSlide(1)">下一頁</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 4 -->
+    <div class="slide">
+      <div class="slide-header">
+        <h2 class="slide-title">聲音的劇場：廣播與戲曲的歷史交會</h2>
+      </div>
+      <div class="slide-body">
+        <ul class="key-points-list">
+          <li>1970至1990年代，廣播媒體（如國防部中央電臺等）肩負心戰與海外宣傳任務 [DOC-005]。</li>
+          <li>京劇因普及性高成為各電臺最大量典藏與製播劇種；歌仔戲曾結合藥廠宣傳播送 [DOC-005]。</li>
+          <li>台北首都的同鄉會聚集與國軍文藝活動中心輪檔演出，共同形塑了豐富的戲曲生態 [DOC-005]。</li>
+        </ul>
+        <div class="speaker-notes-box">
+          <span>講者筆記：</span>除了實體舞台，聲音也是劇場傳播的重要媒介，兩岸對峙時期的廣播電臺典藏了大量珍貴的戲曲聲音紀錄。
+        </div>
+      </div>
+      <div class="slide-footer">
+        <div class="meta-info">
+          <div>來源代碼: DOC-005</div>
+          <div>相關檔案: wiki/sources/DOC-005.md, wiki/entities/venues.md</div>
+        </div>
+        <div class="controls">
+          <button class="nav-btn" onclick="changeSlide(-1)">上一頁</button>
+          <span class="page-indicator">4 / 8</span>
+          <button class="nav-btn" onclick="changeSlide(1)">下一頁</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 5 -->
+    <div class="slide">
+      <div class="slide-header">
+        <h2 class="slide-title">現代劇場的崛起：從新劇運動到劇場化</h2>
+      </div>
+      <div class="slide-body">
+        <ul class="key-points-list">
+          <li>現代劇場經歷日治時期新劇運動、戰後反共抗俄劇與解嚴前小劇場運動（如蘭陵劇坊） [DOC-001]。</li>
+          <li>戰後現代戲劇由官方文化系統主導，以西方劇場藝術為依歸，強調專業分工與精選排練 [DOC-002]。</li>
+          <li>1990年代後藝術跨界融合頻繁，傳統戲曲也逐漸走向「劇場化」與「精緻化」 [DOC-001, DOC-002]。</li>
+        </ul>
+        <div class="speaker-notes-box">
+          <span>講者筆記：</span>隨著時代變遷，西方現代劇場概念引入台灣，強調專業分工與精緻排練，與傳統民間劇場形成對比。
+        </div>
+      </div>
+      <div class="slide-footer">
+        <div class="meta-info">
+          <div>來源代碼: DOC-001, DOC-002</div>
+          <div>相關檔案: wiki/concepts/modern-theatre.md</div>
+        </div>
+        <div class="controls">
+          <button class="nav-btn" onclick="changeSlide(-1)">上一頁</button>
+          <span class="page-indicator">5 / 8</span>
+          <button class="nav-btn" onclick="changeSlide(1)">下一頁</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 6 -->
+    <div class="slide">
+      <div class="slide-header">
+        <h2 class="slide-title">實體空間與場館：從軍中舞台到國家級劇院</h2>
+      </div>
+      <div class="slide-body">
+        <ul class="key-points-list">
+          <li>歷史上如國軍文藝活動中心曾常態性提供各軍種京劇團輪檔演出 [DOC-005]。</li>
+          <li>國家戲劇院與國家音樂廳（兩廳院）於1987年落成，象徵現代化劇場里程碑 [DOC-001]。</li>
+          <li>後續落成的臺中國家歌劇院與衛武營國家藝術文化中心，平衡了南北表演藝術發展 [DOC-001]。</li>
+        </ul>
+        <div class="speaker-notes-box">
+          <span>講者筆記：</span>表演藝術需要實體場館支撐，從早期的軍方文藝中心到當代的國家級表演藝術中心，硬體建設推動了劇場發展。
+        </div>
+      </div>
+      <div class="slide-footer">
+        <div class="meta-info">
+          <div>來源代碼: DOC-001, DOC-005</div>
+          <div>相關檔案: wiki/entities/venues.md, wiki/sources/DOC-001.md</div>
+        </div>
+        <div class="controls">
+          <button class="nav-btn" onclick="changeSlide(-1)">上一頁</button>
+          <span class="page-indicator">6 / 8</span>
+          <button class="nav-btn" onclick="changeSlide(1)">下一頁</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 7 -->
+    <div class="slide">
+      <div class="slide-header">
+        <h2 class="slide-title">教育劇場（TIE）：走入學校與社會的互動劇場</h2>
+      </div>
+      <div class="slide-body">
+        <ul class="key-points-list">
+          <li>1965年由戈登．威林斯（Gordon Yallins）在英國卡門特里發展，使專業劇團投入學校教育 [DOC-004]。</li>
+          <li>受布萊希特史詩劇場啟發，強調觀眾參與，觀眾可直接與角色對談探討問題 [DOC-004]。</li>
+          <li>場地多在教室、禮堂或社區中心，每場服務約七、八十人的小眾開放形式 [DOC-004]。</li>
+        </ul>
+        <div class="speaker-notes-box">
+          <span>講者筆記：</span>劇場不僅在專業劇院，教育劇場（TIE）更將戲劇帶入校園與社區，讓學生透過互動直接參與議題討論。
+        </div>
+      </div>
+      <div class="slide-footer">
+        <div class="meta-info">
+          <div>來源代碼: DOC-004</div>
+          <div>相關檔案: wiki/concepts/applied-theatre.md</div>
+        </div>
+        <div class="controls">
+          <button class="nav-btn" onclick="changeSlide(-1)">上一頁</button>
+          <span class="page-indicator">7 / 8</span>
+          <button class="nav-btn" onclick="changeSlide(1)">下一頁</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 8 -->
+    <div class="slide">
+      <div class="slide-header">
+        <h2 class="slide-title">總結與反思：重建傳統與現代的橋樑</h2>
+      </div>
+      <div class="slide-body">
+        <ul class="key-points-list">
+          <li>台灣當代劇場涵蓋了傳統戲劇、現代劇場、廣播聲音典藏及應用劇場等多元風貌 [DOC-001, DOC-002, DOC-005]。</li>
+          <li>學者指出若表演缺乏人文儀式傳統將流於冰冷形體，需重建民間性 [DOC-002]。</li>
+          <li>在既有傳統基礎上結合現代劇場專業，方能發展出具文化傳統與共同信仰基礎的現代劇場 [DOC-002]。</li>
+        </ul>
+        <div class="speaker-notes-box">
+          <span>講者筆記：</span>總結來說，了解傳統劇場的民間性與儀式結構，並融合現代劇場的專業分工，是台灣劇場持續發展的重要方向。
+        </div>
+      </div>
+      <div class="slide-footer">
+        <div class="meta-info">
+          <div>來源代碼: DOC-001, DOC-002, DOC-005</div>
+          <div>相關檔案: wiki/syntheses/theatre-history-perspective.md</div>
+        </div>
+        <div class="controls">
+          <button class="nav-btn" onclick="changeSlide(-1)">上一頁</button>
+          <span class="page-indicator">8 / 8</span>
+          <button class="nav-btn" onclick="changeSlide(1)">下一頁</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  let currentSlideIndex = 0;
+  const slides = document.querySelectorAll('.slide');
+  const totalSlides = slides.length;
+  const progressBar = document.getElementById('progressBar');
+
+  function updatePresentation() {
+    slides.forEach((slide, index) => {
+      if (index === currentSlideIndex) {
+        slide.classList.add('active');
+      } else {
+        slide.classList.remove('active');
+      }
+    });
+
+    // 更新進度條
+    const progress = ((currentSlideIndex + 1) / totalSlides) * 100;
+    progressBar.style.width = progress + '%';
+  }
+
+  function changeSlide(direction) {
+    currentSlideIndex += direction;
+    if (currentSlideIndex < 0) {
+      currentSlideIndex = 0;
+    } else if (currentSlideIndex >= totalSlides) {
+      currentSlideIndex = totalSlides - 1;
+    }
+    updatePresentation();
+  }
+
+  // 鍵盤左右方向鍵控制
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+      changeSlide(1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      changeSlide(-1);
+    }
+  });
+
+  // 初始化
+  updatePresentation();
+</script>
+
+</body>
+</html>
