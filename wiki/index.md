@@ -15,7 +15,7 @@
 - [台灣劇場史觀與傳統劇場民間性](syntheses/theatre-history-perspective.md)
 
 ## 來源頁
-- [DOC-001：文化部藝文資源與劇場發展概況](sources/DOC-001.md)
+- [DOC-001：臺灣藝文與表演藝術發展概況](sources/DOC-001.md)
 - [DOC-002：台灣劇場史觀點與傳統劇場民間性](sources/DOC-002.md)
 - [DOC-004：教育劇場(Theatre-in-Education)介紹](sources/DOC-004.md)
 - [DOC-005：傳統戲曲盤式錄音帶資料調查暨詮釋計畫](sources/DOC-005.md)
